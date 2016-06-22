@@ -6,11 +6,8 @@ import ReactDisqusThread    from 'react-disqus-thread';
 import ScenarioTableView    from './ScenarioTableView.jsx';
 
 import ScenarioEditButton   from './ScenarioEditButton.jsx';
-import ScenarioEvalButton   from './ScenarioEvalButton.jsx';
-import ScenarioDeleteButton from './ScenarioDeleteButton.jsx';
 
-import EvalCom              from './EvalCom.jsx';
-import EvalButton           from './EvalButton.jsx';
+import ScenarioDeleteButton from './ScenarioDeleteButton.jsx';
 
 import api                  from '../../../api_routes.js';
 import Message              from '../Message.jsx';
@@ -21,25 +18,32 @@ import DocumentTitle        from 'react-document-title';
 import Feedback             from './Feedback.jsx';
 import ScenarioRating       from './ScenarioRating.jsx';
 
-import UserIsCreatorMixin   from '../UserIsCreatorMixin.jsx';
 import UserIsLoggedInMixin  from './../UserIsLoggedInMixin.jsx';
+import UserIsCreatorMixin   from '../UserIsCreatorMixin.jsx';
+import LoadingMixin         from '../LoadingMixin.jsx';
+import FlashQueue           from '../FlashQueue.jsx';
+import I18nMixin            from '../i18n/I18nMixin.jsx';
 
 var ScenarioView = React.createClass({
-  mixins: [Router.Navigation, UserIsCreatorMixin, UserIsLoggedInMixin],
+  mixins: [UserIsCreatorMixin, UserIsLoggedInMixin, I18nMixin, LoadingMixin, FlashQueue.Mixin, Router.Navigation],
   getInitialState: function() {
     return null;
   },
   componentDidMount: function() {
-
+    this.loading();
+    this.getScenario();
+  },
+  getScenario: function() {
     var url = api.reverse('scenario_by_uuid', { uuid : this.props.params.uuid });
     var showEval = null;
-
     $.ajax({
       dataType: 'json',
       url: url,
       success: (scenario) => {
         if (this.isMounted()) {
           this.setState(scenario);
+          this.setState({undo: true});
+          this.loaded();
         }
       },
       error: (jqXHR, textStatus, errorThrown) => {
@@ -49,56 +53,68 @@ var ScenarioView = React.createClass({
       }
     });
   },
+  handleDelete: function() {
+    this.setState({deleted: true});
+    this.transitionTo('scenarioCreate');
+    var flashDel = this.i18n('Flash.on_delete_scenario', 'Scenario has been removed.');
+    this.flash('success', flashDel, 5000);
+  },
+  handleUndo: function() {
+    // TODO: compare PREVIOUS scenario state with current and print CHANGES to flash
+    this.getScenario();
+    if(this.state.undo) {
+      var flashUndo = this.i18n('Flash.on_undo_scenario', 'Scenario has been set to previous version.');
+      this.flash('success', flashUndo /* + CHANGES*/ , 5000);
+    }
+  },
   render: function() {
+
+    if (this.state.deleted) {
+      return null;
+    }
+
     if (this.state === null) {
       return null;
     }
 
-    if (this.state.error) {
-      var message = (this.state.error.status + ': ' + this.state.error.statusText);
-      return (<Message type="danger" message={message} />);
-    }
-
-    var starRating = <div className="row">
-      <div className="oc-macro-content">
-        <div className="oc-article-star-rating-wrapper">
-          <div className="col-md-12">
-            <h4 className="oc-bold">How interesting is this scenario for you?</h4></div>
-          <div className="col-md-12">
-            <ScenarioRating
-              scenario={this.state}
-              enabled={true}
-              className={"oc-article-rate-star"} />
+    if (this.isLoading()) {
+      if (this.state.error) {
+        var message = (this.state.error.status + ': ' + this.state.error.statusText);
+        return (
+          <div className="oc-macro-content">
+            <Message type="danger" message={message} />
           </div>
-        </div>
-      </div>
-    </div>;
-
-    if(this.userIsCreator(this.state)) {
-      starRating = null;
+        );
+      }
+      return this.renderLoading();
     }
 
     return (
       <div>
-        <DocumentTitle title={config.title + ' | Sceanrio | ' + this.state.title} />
+        <DocumentTitle title={config.title + ' | Scenario | ' + this.state.title} />
         <div className="row">
           <ScenarioTableView scenario={this.state} />
-
         </div>
-        {this.userIsLoggedIn() ? starRating : starRating}
-        <Feedback scenario={this.state} evaluations={userEvaluations}></Feedback>
+        <Feedback scenario={this.state}>
+        </Feedback>
         <div className="row">
           <div className="form-group">
             <div className="oc-macro-content oc-scenario-controls">
-              <div className="col-sm-4"><ScenarioEditButton scenario={this.state}/></div>
+              <div className="col-sm-4">
+                <ScenarioEditButton scenario={this.state}/>
+              </div>
               <div className="col-sm-4">
 
               </div>
-              <div className="col-sm-4"><ScenarioDeleteButton scenario={this.state}/></div>
+              <div className="col-sm-4">
+                <ScenarioDeleteButton
+                  handleUndo={this.handleUndo}
+                  handleDelete={this.handleDelete}
+                  scenario={this.state}/>
+              </div>
             </div>
           </div>
         </div>
-
         <div className="oc-macro-content">
           <div className="oc-disqus-wrapper">
             <ReactDisqusThread

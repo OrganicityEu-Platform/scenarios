@@ -1,14 +1,43 @@
-import React  from 'react';
+import React              from 'react';
 import ScenarioThumbnail  from './ScenarioThumbnail.jsx';
+
+import I18nMixin          from '../i18n/I18nMixin.jsx';
+import MasonryMixin       from 'react-masonry-mixin';
 
 // FIXME: move to less
 var sceanriosCounterStyle = {
   textAlign: 'center'
 };
 
-var ScenarioThumbnails = React.createClass({
+var masonryOptions = {
+  transitionDuration: '0.4s',
+  itemSelector: '.scenario-thumbnail'
 
+};
+
+var ScenarioThumbnails = React.createClass({
+  mixins: [I18nMixin, MasonryMixin(React)('oc-scenario-thumbnails-pack', masonryOptions)],
+  getInitialState: function() {
+    return {
+      limit: this.props.limit ? this.props.limit - 1 : null,
+      increment: 15
+    };
+  },
+  handleLoadMore: function() {
+    this.setState({limit: this.state.limit + this.state.increment});
+  },
   render: function() {
+
+    var loadMore = this.state.limit ?
+    this.props.scenarios.length > this.state.limit ?
+    <button
+      className="oc-button"
+      onClick={() => this.handleLoadMore()}>
+      LOAD MORE
+    </button>
+    :
+    null:
+    null;
 
     if (!this.props.scenarios) {
       return null;
@@ -18,24 +47,43 @@ var ScenarioThumbnails = React.createClass({
     if (this.props.counter) {
       counter = (
         <div style={sceanriosCounterStyle}>
-          Scenarios: {this.props.scenarios.length}
+          {this.i18n('scenarios', 'Scenarios')}: {this.props.scenarios.length}
         </div>
       );
     }
 
     return (
-      <div>
-      {counter}
-        <div className="row scenario-thumbnails">
-        {
-          this.props.scenarios.map(
-            (scenario) => <ScenarioThumbnail key={scenario.uuid} scenario={scenario} onChange={this.reload}/>
-          )
-        }
+      <div className="row">
+        <div
+          ref="oc-scenario-thumbnails-pack"
+          className="oc-scenario-thumbnails-pack">
+          {
+            this.state.limit ?
+            this.props.scenarios.map(
+              (scenario, i) => {  return i <= this.state.limit ?
+                <ScenarioThumbnail
+                  key={scenario.uuid}
+                  scenario={scenario}
+                  onChange={this.reload}/>
+                :
+                null}
+              )
+              :
+              this.props.scenarios.map(
+                (scenario) =>
+                <ScenarioThumbnail
+                  key={scenario.uuid}
+                  scenario={scenario}
+                  onChange={this.reload}/>
+              )
+            }
+          </div>
+          <div id="oc-explore-load-more-btn">
+            {loadMore}
+          </div>
         </div>
-      </div>
-    );
-  }
-});
+      );
+    }
+  });
 
-export default ScenarioThumbnails;
+  export default ScenarioThumbnails;

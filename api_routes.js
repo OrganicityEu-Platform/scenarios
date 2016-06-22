@@ -7,6 +7,7 @@ var prefixes = {
   'scenarios'      : '/api/v1/scenarios',
   'ratings'        : '/api/v1/ratings',
   'feedback'       : '/api/v1/feedback',
+  'statistic'      : '/api/v1/statistic',
   'actors'         : '/api/v1/actors',
   'sectors'        : '/api/v1/sectors',
   'devices'        : '/api/v1/devices',
@@ -62,9 +63,14 @@ var api_routes = {
   'forgot-password'            : prefixes.users + '/forgot-password',
   'update-password'            : prefixes.users + '/update-password',
   'user-update-viablility'     : prefixes.users + '/:uuid/update-viablility',
+  'set_favorite'               : prefixes.users + '/:uuid/set_favorite',
+  'remove_favorite'            : prefixes.users + '/:uuid/remove_favorite',
 
   //
   'upload_thumbnail'           : prefixes.upload + '/thumbnail/?',
+
+  //
+  'statistics'                  : prefixes.statistic + '/?',
 
   // reports routes
   'report_list'                : prefixes.reports + '/?',

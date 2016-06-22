@@ -7,7 +7,7 @@ module.exports = function(router, passport) {
 
   var isLoggedIn = require('../../../models/isLoggedIn.js')(passport);
 
-  router.get(api.route('feedback_list'), function(req, res) {
+  router.get(api.route('feedback_list'), [isLoggedIn], function(req, res) {
     var filter = {};
     var query = Feedback.find(filter);
     query.exec(function(err, feedback) {
@@ -41,7 +41,7 @@ module.exports = function(router, passport) {
     });
 
   });
-  router.get(api.route('feedback_by_user'), [isLoggedIn], function(req, res) {
+  router.get(api.route('feedback_by_user'), function(req, res) {
     Feedback.find({ user : req.params.uuid }, function(err, feedback) {
       if (err) {
         console.log(err);

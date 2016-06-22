@@ -22,6 +22,7 @@ import UserIsLoggedInMixin  from '../UserIsLoggedInMixin.jsx';
 import UploadImage          from '../UploadImage.jsx';
 import FlashQueue           from '../FlashQueue.jsx';
 import LoadingMixin         from '../LoadingMixin.jsx';
+import I18nMixin            from '../i18n/I18nMixin.jsx';
 
 import config               from '../../../config/config.js';
 import DocumentTitle        from 'react-document-title';
@@ -29,7 +30,7 @@ import DocumentTitle        from 'react-document-title';
 import lang                 from '../../../lang/en.js'
 
 var ScenarioEditView = React.createClass({
-  mixins : [Router.Navigation, Router.State, LoadingMixin, UserIsLoggedInMixin, FlashQueue.Mixin],
+  mixins : [Router.Navigation, Router.State, LoadingMixin, UserIsLoggedInMixin, FlashQueue.Mixin, I18nMixin],
   predefinedSectors: [
     'public', 'transport', 'agriculture',
     'energy', 'retail', 'healthcare',
@@ -295,8 +296,8 @@ clickedPrevious : function() {
 },
 clickedPreview : function() {
 
-  console.log(this.currentStep());
-
+  //console.log(this.currentStep());
+  window.scrollTo(0, 0);
   // Trim, as soon the button is clicked
   this.setState({
     btnClickedOnce: true,
@@ -360,7 +361,9 @@ clickedSubmit : function() {
     var method = this.editMode() ? 'PUT' : 'POST';
     var url    = this.editMode() ? api.reverse('scenario_by_uuid', { uuid : this.props.params.uuid })
     : api.reverse('scenario_list');
-    var successMessage = this.editMode() ? 'Sceanrio updated successfully.' : 'Sceanrio created successfully';
+    var successMessage = this.editMode() ?
+      this.i18n('Flash.on_update_scenario', 'Scenario updated successfully.') :
+      this.i18n('Flash.on_create_scenario', 'Scenario created successfully.');
     var errorMessage = this.editMode() ? 'Error while updating a scenario.' : 'Error while creating a scenario';
 
     this.loading();
@@ -386,368 +389,394 @@ removeCredit: function(i) {
 getCredits: function() {
   return this.state.credits.map(function(credit, i){
     return <div className="oc-inner-credit-form-wrapper">
-      <div className="oc-credit-count"># {i + 1}</div>
+      <div className="oc-credit-count">
+        # {i + 1}
+      </div>
       <div className="col-md-3">
         <input
           type="text"
           className="oc-input-extra"
           placeholder="name"
+          autoComplete="off"
           onChange={this.handleEditCreditor.bind(this, i)}
-          defaultValue={credit.creditor}></input>
+          defaultValue={credit.creditor}>
+        </input>
       </div>
       <div className="oc-credit-url-wrapper">
         <input
           type="text"
           className="oc-input-extra"
-          placeholder="url"
+          placeholder="optional url"
+          autoComplete="off"
           onChange={this.handleEditCreditorUrl.bind(this, i)}
-          defaultValue={credit.creditorUrl}></input>
+          defaultValue={credit.creditorUrl}>
+        </input>
       </div>
       <div className="oc-remove-credit-wrapper">
-        <span className="oc-remove-credit-inner-wrapper"
+        <span
+          className="oc-remove-credit-inner-wrapper"
           onClick={() => this.removeCredit(i)}>
-          <i className="fa fa-times oc-tag-clear"></i>remove</span>
-          </div>
-    </div>;
-  }, this);
-},
-validateCurrentStep : function(onvalidate, onerror) {
+          <i className="fa fa-times oc-tag-clear">
+          </i>remove</span>
+        </div>
+      </div>;
+    }, this);
+  },
+  validateCurrentStep : function(onvalidate, onerror) {
 
-  if (this.validatorTypes) {
-    this.props.validate((error) => {
-      if (error) {
+    if (this.validatorTypes) {
+      this.props.validate((error) => {
+        if (error) {
 
-        var errorFields = [];
+          var errorFields = [];
 
-        for (var err in error) {
-          errorFields.push(err);
+          for (var err in error) {
+            errorFields.push(err);
+          }
+
+          if (errorFields.length > 1) {
+            var fieldsError = this.i18n('Flash.on_error_multiple_fields', 'fields are not valid.');
+            this.flash('danger', errorFields + ' ' + fieldsError, 10000);
+          }
+
+          if (errorFields.length === 1) {
+            var fieldError = this.i18n('Flash.on_error_single_field', 'field is not valid.');
+            this.flash('danger', errorFields + ' ' + fieldError, 10000);
+          }
+
+          if (onerror) {
+            onerror();
+          }
+          this.setState({}); // Rerender to show errors
+        } else {
+          //console.log('Input validation successful!');
+          if (onvalidate) {
+            onvalidate();
+          }
         }
+      });
 
-        if (errorFields.length > 1) {
-          this.flash('danger', errorFields + ' fields are not valid.', 10000);
-        }
-
-        if (errorFields.length === 1) {
-          this.flash('danger', errorFields + ' field is not valid.', 10000);
-        }
-
-        if (onerror) {
-          onerror();
-        }
-        this.setState({}); // Rerender to show errors
-      } else {
-        //console.log('Input validation successful!');
-        if (onvalidate) {
-          onvalidate();
-        }
+    } else {
+      if (callback) {
+        callback();
       }
-    });
-
-  } else {
-    if (callback) {
-      callback();
     }
-  }
-},
-form : function() {
+  },
+  form : function() {
 
-  // return (<SectorEdit onChange={this.handleChangedSectors} sectors={this.state.sectors}/>);
+    // return (<SectorEdit onChange={this.handleChangedSectors} sectors={this.state.sectors}/>);
 
-  //console.log('state', this.state);
-  //console.log('title', this.props.isValid('title'));
-  //console.log('summary', this.props.isValid('summary'));
-  //console.log('narrative', this.props.isValid('narrative'));
+    //console.log('state', this.state);
+    //console.log('title', this.props.isValid('title'));
+    //console.log('summary', this.props.isValid('summary'));
+    //console.log('narrative', this.props.isValid('narrative'));
 
-  var errorMessageTitle = null;
-  var errorMessageCredits = null;
-  var errorMessageSummary = null;
-  var errorMessageNarrative = null;
-  var errorMessageSelectedSectors = null;
+    var errorMessageTitle = null;
+    var errorMessageCredits = null;
+    var errorMessageSummary = null;
+    var errorMessageNarrative = null;
+    var errorMessageSelectedSectors = null;
 
-  // Just show the error messages, if the button was clicked once
-  if (this.state.btnClickedOnce) {
-    errorMessageTitle = (
-      <Message
-        type="danger"
-        messages={this.props.getValidationMessages('title')} />
-    );
-    errorMessageSummary = (
-      <Message
-        type="danger"
-        messages={this.props.getValidationMessages('summary')} />
-    );
-    errorMessageNarrative = (
-      <Message
-        type="danger"
-        messages={this.props.getValidationMessages('narrative')} />
-    );
-    errorMessageSelectedSectors = (
-      <Message
-        type="danger"
-        messages={this.props.getValidationMessages('selectedSectors')} />
-    );
-    errorMessageCredits = (
-      <Message
-        type="danger"
-        messages={this.props.getValidationMessages('credits')} />
-    );
-  }
+    // Just show the error messages, if the button was clicked once
+    if (this.state.btnClickedOnce) {
+      errorMessageTitle = (
+        <Message
+          type="danger"
+          messages={this.props.getValidationMessages('title')} />
+      );
+      errorMessageSummary = (
+        <Message
+          type="danger"
+          messages={this.props.getValidationMessages('summary')} />
+      );
+      errorMessageNarrative = (
+        <Message
+          type="danger"
+          messages={this.props.getValidationMessages('narrative')} />
+      );
+      errorMessageSelectedSectors = (
+        <Message
+          type="danger"
+          messages={this.props.getValidationMessages('selectedSectors')} />
+      );
+      errorMessageCredits = (
+        <Message
+          type="danger"
+          messages={this.props.getValidationMessages('credits')} />
+      );
+    }
 
-  var pageTitle = this.editMode() ? 'Edit your scenario' : 'Share your scenario for our future cities';
+    var edit = this.i18n('Create.edit', 'Edit your scenario');
+    var share = this.i18n('Create.share', 'Share your scenario for our future cities');
+    var pageTitle = this.editMode() ? edit : share;
 
-  return (
-    <div className="row oc-form-group-view">
-      <DocumentTitle title={config.title + ' | ' + pageTitle} />
-      <div className="oc-macro-content">
-        <h1 className="oc-pink">
-          {pageTitle}
-        </h1>
-        <h2 className="pink">Mandatory fields</h2>
-        <form className="form-horizontal">
+    return (
+      <div className="row oc-form-group-view">
+        <DocumentTitle title={config.title + ' | ' + pageTitle} />
+        <div className="oc-macro-content">
+          <h1 className="oc-pink">
+            {pageTitle}
+          </h1>
+          <h2 className="pink">
+            {this.i18n('Create.mandatory_fields', 'Mandatory fields')}
+          </h2>
+          <form className="form-horizontal">
+            <div className="form-group oc-form-group oc-edit-group">
+              <label
+                className="control-label col-sm-3"
+                htmlFor="title">
+                {this.i18n('Create.title', 'Title')} <ValidationIndicator valid={this.props.isValid('title')}/>
+              <span className="oc-form-group-info">
+                {this.i18n('Create.titleInfo', 'Keep it short and sweet.')}
+              </span>
+            </label>
+            <div className="col-sm-9">
+              <input
+                maxLength={ScenarioConfig.max.title}
+                type="text"
+                className="oc-input"
+                name="title"
+                autoComplete="off"
+                id="title"
+                value={this.state.title}
+                onChange={this.handleChangedTitle} />
+              <span className="oc-char-remain">
+                {ScenarioConfig.max.title - this.state.title.length} {this.i18n('Create.characters_remaining', 'characters remaining')}
+              </span>
+              {errorMessageTitle}
+            </div>
+          </div>
           <div className="form-group oc-form-group oc-edit-group">
             <label
               className="control-label col-sm-3"
-              htmlFor="title">
-              Title <ValidationIndicator valid={this.props.isValid('title')}/>
+              htmlFor="summary">
+              {this.i18n('Create.summary', 'Summary')} <ValidationIndicator valid={this.props.isValid('summary')}/>
             <span className="oc-form-group-info">
-              {lang.ScenarioEditView.titleInfo}
+              {this.i18n('Create.summaryInfo', 'If you could explain it in a tweet, what would you say?')}
             </span>
           </label>
           <div className="col-sm-9">
-            <input
-              maxLength={ScenarioConfig.max.title}
+            <textarea
+              maxLength={ScenarioConfig.max.summary}
               type="text"
-              className="oc-input"
-              name="title"
-              id="title"
-              value={this.state.title}
-              onChange={this.handleChangedTitle} />
+              className="oc-input scenario-create-edit-summary"
+              name="summary"
+              id="summary"
+              value={this.state.summary}
+              onChange={this.handleChangedSummary} />
             <span className="oc-char-remain">
-              {ScenarioConfig.max.title - this.state.title.length} characters remaining
+              {ScenarioConfig.max.summary - this.state.summary.length} {this.i18n('Create.characters_remaining', 'characters remaining')}
             </span>
-            {errorMessageTitle}
+            {errorMessageSummary}
           </div>
         </div>
         <div className="form-group oc-form-group oc-edit-group">
           <label
             className="control-label col-sm-3"
-            htmlFor="summary">
-            Summary <ValidationIndicator valid={this.props.isValid('summary')}/>
+            htmlFor="narrative">
+            {this.i18n('Create.narrative', 'Narrative')} <ValidationIndicator valid={this.props.isValid('narrative')}/>
           <span className="oc-form-group-info">
-            {lang.ScenarioEditView.summaryInfo}
+            {this.i18n('Create.narrativeInfo', 'Explain your idea as brief as you like. Include details or references.')}
+            {lang.ScenarioEditView.narrativeInfo}
           </span>
         </label>
         <div className="col-sm-9">
           <textarea
-            maxLength={ScenarioConfig.max.summary}
-            type="text"
-            className="oc-input scenario-create-edit-summary"
-            name="summary"
-            id="summary"
-            value={this.state.summary}
-            onChange={this.handleChangedSummary} />
+            maxLength={ScenarioConfig.max.narrative}
+            className="oc-input scenario-create-edit-narrative"
+            name="narrative"
+            id="narrative"
+            value={this.state.narrative}
+            onChange={this.handleChangedNarrative} />
           <span className="oc-char-remain">
-            {ScenarioConfig.max.summary - this.state.summary.length} characters remaining
+            {ScenarioConfig.max.narrative - this.state.narrative.length} {this.i18n('Create.characters_remaining', 'characters remaining')}
           </span>
-          {errorMessageSummary}
+          {errorMessageNarrative}
         </div>
       </div>
       <div className="form-group oc-form-group oc-edit-group">
         <label
           className="control-label col-sm-3"
-          htmlFor="narrative">
-          Narrative <ValidationIndicator valid={this.props.isValid('narrative')}/>
+          htmlFor="sectors">
+          {this.i18n('Create.sectors', 'Sectors')} <ValidationIndicator valid={this.props.isValid('selectedSectors')}/>
         <span className="oc-form-group-info">
-          {lang.ScenarioEditView.narrativeInfo}
+          {this.i18n('Create.sectorsInfo', 'Areas where your idea belongs. This would mean “retail” for an idea around shopping or “cultural” for a scenario around art or literature.')}
         </span>
       </label>
       <div className="col-sm-9">
-        <textarea
-          maxLength={ScenarioConfig.max.narrative}
-          className="oc-input scenario-create-edit-narrative"
-          name="narrative"
-          id="narrative"
-          value={this.state.narrative}
-          onChange={this.handleChangedNarrative} />
-        <span className="oc-char-remain">
-          {ScenarioConfig.max.narrative - this.state.narrative.length} characters remaining
+        <SectorSelector
+          onChange={this.handleSectorSelector}
+          sectors={this.predefinedSectors}
+          sectorIcons={this.sectorIcons}
+          selected={this.state.selectedSectors}
+          />
+        {errorMessageSelectedSectors}
+        <div className="new-sector-suggest">
+          {this.i18n('Create.suggest_new_sectors', 'Suggest new sectors')}:
+          <TagField
+            id="createEditSearchFormSectors"
+            placeholder={this.i18n('Create.sector_placeholder', 'Write your sector if it’s different')}
+            tags={this.state.newSectors}
+            doEdit={true}
+            clearText={this.i18n('Create.clear_all_sectors', 'clear all sectors')}
+            onChange={this.handleNewSector}
+            />
+        </div>
+      </div>
+    </div>
+    <h2 className="pink">
+      {this.i18n('Create.optional_fields', 'Optional fields')}
+    </h2>
+    <div className="form-group oc-form-group oc-edit-group">
+      <label
+        className="control-label col-sm-3"
+        htmlFor="sectors">
+        {this.i18n('Create.participants', 'Participants')}
+        <span className="oc-form-group-info">
+          {this.i18n('Create.actorsInfo', 'People involved in making your idea happen or those affected by the scenario. For example, “citizen”, “business”, “student”, “policy maker”...')}
         </span>
-        {errorMessageNarrative}
+      </label>
+      <div className="col-sm-9">
+        <TagField
+          id="createEditSearchFormActors"
+          placeholder={this.i18n('Create.participants_placeholder', 'List the type of people involved')}
+          tags={this.state.actors}
+          doEdit={true}
+          data={['citizen', 'policy', 'public', 'private', 'researcher', 'business']}
+          clearText={this.i18n('Create.clear_all_participants', 'clear all participants')}
+          onChange={this.handleChangedActors}
+          />
+      </div>
+    </div>
+
+    <div className="form-group oc-form-group oc-edit-group">
+      <label
+        className="control-label col-sm-3"
+        htmlFor="sectors">
+        {this.i18n('Create.tools', 'Tools')}
+        <span className="oc-form-group-info">
+          {this.i18n('Create.toolsInfo', 'Products, devices, instruments, methods that will be used to make your idea a reality. Think of “smart phone” or “sensors”. You can also include the ones in the OrganiCity toolkit.')}
+        </span>
+      </label>
+      <div className="col-sm-9">
+        <TagField
+          id="createEditSearchFormDevices"
+          placeholder={this.i18n('Create.tools_placeholder', 'List products, devices and methods needed')}
+          tags={this.state.devices}
+          doEdit={true}
+          data={['sensors', 'mobile']}
+          clearText={this.i18n('Create.clear_all_tools', 'clear all tools')}
+          onChange={this.handleChangedDevices} />
       </div>
     </div>
     <div className="form-group oc-form-group oc-edit-group">
       <label
         className="control-label col-sm-3"
-        htmlFor="sectors">
-        Sectors <ValidationIndicator valid={this.props.isValid('selectedSectors')}/>
-      <span className="oc-form-group-info">
-        {lang.ScenarioEditView.sectorsInfo}
-      </span>
-    </label>
-    <div className="col-sm-9">
-      <SectorSelector
-        onChange={this.handleSectorSelector}
-        sectors={this.predefinedSectors}
-        sectorIcons={this.sectorIcons}
-        selected={this.state.selectedSectors}
-        />
-      {errorMessageSelectedSectors}
-      <div className="new-sector-suggest">
-        Suggest new sectors:
-        <TagField
-          id="createEditSearchFormSectors"
-          placeholder="Write your sector if it’s different"
-          tags={this.state.newSectors}
-          doEdit={true}
-          clearText={"clear all sectors"}
-          onChange={this.handleNewSector}
+        htmlFor="credit">
+        {this.i18n('Create.credit', 'Credit')}
+        <span className="oc-form-group-info">
+          {this.i18n('Create.creditInfo', 'Those who contributed to the scenario.')}
+          {lang.ScenarioEditView.creditInfo}
+        </span>
+      </label>
+      <div className="oc-credit-form-wrapper">
+        {this.getCredits()}
+        <div className="oc-credit-errors">
+          {errorMessageCredits}
+        </div>
+        <div>
+          <div className="col-md-3">
+            <input
+              className="oc-input"
+              onChange={this.handleChangedCreditor}
+              type="text"
+              id="oc-creditName-input"
+              autoComplete="off"
+              placeholder={this.i18n('Create.name_placeholder', 'name')}>
+            </input>
+          </div>
+          <div className="col-md-6">
+            <input
+              className="oc-input"
+              onChange={this.handleChangedCreditorUrl}
+              type="text"
+              id="oc-creditUrl-input"
+              autoComplete="off"
+              placeholder={this.i18n('Create.optional_url_placeholder', 'optional url')}>
+            </input>
+          </div>
+          <div className="col-md-3">
+            <button
+              className="oc-button oc-add-credit-btn"
+              onClick={this.addCredit}>
+              {this.i18n('Create.add', 'ADD')}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="form-group oc-form-group oc-edit-group">
+      <label className="control-label col-sm-3">
+        {this.i18n('Create.image', 'Image')}
+        <span className="oc-form-group-info">
+          {this.i18n('Create.imageuploadInfo', 'Upload an image that symbolises your idea (a sketch, a visualisation...). Use a JPEG or PNG with a minimum width of 600px.')}
+        </span>
+      </label>
+      <div className="col-sm-9">
+        <UploadImage
+          url={api.reverse('upload_thumbnail')}
+          joi={ScenarioJoi.image}
+          callback={this.onThumbnail}
+          thumbnail={this.state.thumbnail}
+          thumbnail_width="200px"
           />
       </div>
     </div>
-  </div>
-  <h2 className="pink">Optional fields</h2>
-  <div className="form-group oc-form-group oc-edit-group">
-    <label
-      className="control-label col-sm-3"
-      htmlFor="sectors">
-      Participants
-      <span className="oc-form-group-info">
-        {lang.ScenarioEditView.actorsInfo}
-      </span>
-    </label>
-    <div className="col-sm-9">
-      <TagField
-        id="createEditSearchFormActors"
-        placeholder="List the type of people involved"
-        tags={this.state.actors}
-        doEdit={true}
-        clearText={"clear all participants"}
-        onChange={this.handleChangedActors}
-        />
-    </div>
-  </div>
 
-  <div className="form-group oc-form-group oc-edit-group">
-    <label
-      className="control-label col-sm-3"
-      htmlFor="sectors">
-      Tools
-      <span className="oc-form-group-info">
-        {lang.ScenarioEditView.toolsInfo}
-      </span>
-    </label>
-    <div className="col-sm-9">
-      <TagField
-        id="createEditSearchFormDevices"
-        placeholder="List products, devices and methods needed"
-        tags={this.state.devices}
-        doEdit={true}
-        clearText={"clear all tools"}
-        onChange={this.handleChangedDevices} />
-    </div>
-  </div>
-
-  <div className="form-group oc-form-group oc-edit-group">
-    <label className="control-label col-sm-3">
-      Image
-      <span className="oc-form-group-info">
-        {lang.ScenarioEditView.imageuploadInfo}
-      </span>
-    </label>
-    <div className="col-sm-9">
-      <UploadImage
-        url={api.reverse('upload_thumbnail')}
-        joi={ScenarioJoi.image}
-        callback={this.onThumbnail}
-        thumbnail={this.state.thumbnail}
-        thumbnail_width="200px"
-        />
-    </div>
-  </div>
-
-  <div className="form-group oc-form-group oc-edit-group">
-    <label
-      className="control-label col-sm-3"
-      htmlFor="copyright">
-      Image origin
-      <span className="oc-form-group-info">
-        {lang.ScenarioEditView.imageCopyrightInfo}
-      </span>
-    </label>
-    <div className="col-sm-9">
-      <input
-        type="text"
-        className="oc-input"
-        name="copyright"
-        id="copyright"
-        value={this.state.copyright}
-        onChange={this.handleChangedCopyright} />
-    </div>
-  </div>
-
-  <div className="form-group oc-form-group oc-edit-group">
-    <label
-      className="control-label col-sm-3"
-      htmlFor="credit">
-      Credit
-      <span className="oc-form-group-info">
-        {lang.ScenarioEditView.creditInfo}
-      </span>
-    </label>
-    {/*
+    <div className="form-group oc-form-group oc-edit-group">
+      <label
+        className="control-label col-sm-3"
+        htmlFor="copyright">
+        {this.i18n('Create.image_origin', 'Image origin')}
+        <span className="oc-form-group-info">
+          {this.i18n('Create.imageCopyrightInfo', 'Copyright: Name the author or paste the URL of where you got it.')}
+        </span>
+      </label>
       <div className="col-sm-9">
         <input
           type="text"
           className="oc-input"
-          name="credit"
-          id="credit"
-          value={JSON.stringify(this.state.credits)}
-          onChange={this.handleChangedCredits} />
-      </div>
-    */}
-
-    <div className="oc-credit-form-wrapper">
-      {this.getCredits()}
-      <div className="oc-credit-errors">{errorMessageCredits}</div>
-      <div>
-        <div className="col-md-3">
-          <input className="oc-input"
-            onChange={this.handleChangedCreditor}
-            type="text"
-            id="oc-creditName-input"
-            placeholder="name"></input>
-        </div>
-        <div className="col-md-6">
-          <input className="oc-input"
-            onChange={this.handleChangedCreditorUrl}
-            type="text"
-            id="oc-creditUrl-input"
-            placeholder="optional url"></input>
-        </div>
-        <div className="col-md-3"><button className="oc-button oc-add-credit-btn" onClick={this.addCredit}>ADD</button></div>
+          name="copyright"
+          autoComplete="off"
+          id="copyright"
+          value={this.state.copyright}
+          onChange={this.handleChangedCopyright} />
       </div>
     </div>
-  </div>
-
-  <div className="form-group">
-    <div className="oc-create-edit-preview-btn-wrapper">
-      <button
-        type="button"
-        className="oc-button"
-        onClick={this.clickedPreview}
-        >PREVIEW</button>
+    <div className="form-group">
+      <div className="oc-create-edit-preview-btn-wrapper">
+        <button
+          type="button"
+          className="oc-button"
+          onClick={this.clickedPreview}>
+          {this.i18n('Create.preview', 'PREVIEW')}
+        </button>
+      </div>
     </div>
-  </div>
-</form>
+  </form>
 </div>
 </div>
 );
 },
 preview : function() {
 
-  var btnText = this.editMode() ? 'SUBMIT UPDATED SCENARIO' : 'SUBMIT NEW SCENARIO';
+  var btnText = this.editMode() ?
+  this.i18n('Button.submit_updated_scenario', 'SUBMIT UPDATED SCEARIO') :
+  this.i18n('Button.submit_new_scenario', 'SUBMIT NEW SCEARIO');
 
-  var title = this.editMode() ? 'Edit your scenario' : 'Share your scenario for our future cities';
+  var edit = this.i18n('Create.edit', 'Edit your scenario');
+  var share = this.i18n('Create.share', 'Share your scenario for our future cities');
+  var title = this.editMode() ? edit : share;
 
   return (
     <div>
@@ -755,40 +784,34 @@ preview : function() {
       <div className="col-lg-8 col-lg-offset-2">
         <div>
           <h1 className="oc-pink">
-            {title} <small className="pink">preview</small>
-          </h1>
-          <h2 className="oc-pink">
-            Here's your story!
-          </h2>
-          <p className="pink">
-            Please review your scenario. If everything is fine, please submit it.
-          </p>
-        </div>
+            {title} <small className="oc-preview-tag">preview</small>
+        </h1>
       </div>
-      <ScenarioTableView scenario={this.state} />
-      <Message
-        type="danger"
-        messages={this.props.getValidationMessages()} />
-      <div className="row">
-        <div className="form-group">
-          <div className="col-sm-3 col-sm-offset-3">
-            <button
-              type="button"
-              className="oc-button"
-              onClick={this.clickedPrevious}>EDIT</button>
-          </div>
-          <div className="col-sm-3">
-            <button
-              type="button"
-              className="oc-button"
-              onClick={this.clickedSubmit}>
-              {btnText}
-            </button>
-          </div>
+    </div>
+    <ScenarioTableView scenario={this.state} />
+    <Message
+      type="danger"
+      messages={this.props.getValidationMessages()} />
+    <div className="row">
+      <div className="form-group">
+        <div className="col-sm-3 col-sm-offset-3">
+          <button
+            type="button"
+            className="oc-button"
+            onClick={this.clickedPrevious}>{this.i18n('Admin.edit', 'EDIT')}</button>
+        </div>
+        <div className="col-sm-3">
+          <button
+            type="button"
+            className="oc-button"
+            onClick={this.clickedSubmit}>
+            {btnText}
+          </button>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 },
 render: function() {
   //console.log('Render state: ', this.state);

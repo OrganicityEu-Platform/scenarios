@@ -15,39 +15,53 @@ import ScenarioRating     from './ScenarioRating.jsx';
 
 import SectorIcon         from '../SectorIcon.jsx';
 
+import Favorite        from './Favorite.jsx';
+
 import ScenarioEvaluationsCount from '../ScenarioEvaluationsCount.jsx';
 
+import UserIsCreatorMixin   from '../UserIsCreatorMixin.jsx';
+
+import I18nMixin            from '../i18n/I18nMixin.jsx';
+
 var ScenarioTableView = React.createClass({
-  mixins: [LoadingMixin],
+  mixins: [LoadingMixin, UserIsCreatorMixin, I18nMixin],
   handleCreditClick: function(i, creditorUrl) {
     window.open(creditorUrl, '_blank');
   },
   handleCredits: function() {
 
-      return this.props.scenario.credits.map(function(credit, i){
-        var creditLink;
-        if (!credit.creditorUrl) {
-          creditLink = <span
+    return this.props.scenario.credits.map(function(credit, i){
+      var creditLink;
+      if (!credit.creditorUrl) {
+        creditLink =
+        <span key={i} className="oc-credit-wrapper">
+          <span
             className="oc-credit-no-link">
             {credit.creditor}
-          </span>;
-        }else {
-          creditLink = <span
+          </span>
+          {this.props.scenario.credits.length === i + 1 ? null : ","}
+        </span>
+        ;
+      }else {
+        creditLink =
+        <span key={i} className="oc-credit-wrapper">
+          <span
             onClick={this.handleCreditClick.bind(this, i, credit.creditorUrl)}
             className="oc-credit-with-link">
             {credit.creditor}
-          </span>;
-        }
-        return creditLink;
-      }, this);
+          </span>
+          {this.props.scenario.credits.length === i + 1 ? null : ","}
+        </span>
+        ;
+      }
+      return creditLink;
+    }, this);
 
   },
   render: function() {
     if (!this.props.scenario) {
       return null;
     }
-
-    //console.log('Scenario', this.props.scenario)
 
     var image = this.props.scenario.image;
     if (image && (image.startsWith('uploads/') || image.startsWith('tmp/'))) {
@@ -60,7 +74,7 @@ var ScenarioTableView = React.createClass({
       image = undefined;
     }
 
-    var sector_colour = this.props.scenario.sectors[0];
+    var sector_colour = this.props.scenario.sectors ? this.props.scenario.sectors[0]: 'generic_sector';
     var sector_colour_marker;
     var article_image_overlay;
     if (sector_colour) {
@@ -71,11 +85,11 @@ var ScenarioTableView = React.createClass({
     }
 
     var credit;
-    if (this.props.scenario.credits.length > 0) {
+    if (this.props.scenario.credits && this.props.scenario.credits.length > 0) {
       credit = (
         <div className="col-md-3">
           <div className="scenario-ast-wrapper">
-            <span className="scenario-ast">Credit:</span>
+            <span className="scenario-ast">{this.i18n('credit', 'credit')}:</span>
             <span className="scenario-ast-items">
               {this.handleCredits()}
             </span>
@@ -85,7 +99,6 @@ var ScenarioTableView = React.createClass({
         </div>
       );
     }
-
     var copyright;
     if (this.props.scenario.copyright) {
       copyright = (
@@ -107,15 +120,17 @@ var ScenarioTableView = React.createClass({
       editor = (
         <div>
           <span className="scenario-article-publisher">
-            Edited by <UserAvatar uuid={this.props.scenario.editor} />
-          </span>
-          <span className="scenario-article-timestamp">
-            { this.props.scenario.timestamp ?
-              <TimeAgo date={this.props.scenario.editor_timestamp} />
-                : '' }
+            {this.i18n('edited_by', 'Edited by')} <UserAvatar uuid={this.props.scenario.editor} />
+        </span>
+        <span className="scenario-article-timestamp">
+          { this.props.scenario.timestamp ?
+            <TimeAgo
+              date={this.props.scenario.editor_timestamp}
+              formatter={this.i18nFormatter} />
+            : '' }
           </span>
         </div>
-      )
+      );
     }
 
     return (
@@ -125,7 +140,9 @@ var ScenarioTableView = React.createClass({
             <div className="col-lg-4 col-lg-push-8 scenario-article-header-right-top">
               <div className={sector_colour_marker}>
                 <span className="scenario-article-score">
-                  <SectorIcon className={"oc-article-sector-icon"} sector={sector_colour} />
+                  <SectorIcon
+                    className={"oc-article-sector-icon"}
+                    sector={sector_colour} />
                 </span>
               </div>
               <div className="scenario-article-widget-data">
@@ -135,107 +152,127 @@ var ScenarioTableView = React.createClass({
                   <Counter
                     scope="scenarios"
                     className="scenario-article-views"
-                    id={this.props.scenario.uuid} />  views
-                  </p>
-                  <p className="scenario-article-widget-data-comments">
-                    <i className="fa fa-comment-o">
-                    </i>
-                    <Comments
-                      scope="scenarios"
-                      className="scenario-article-comments"
-                      id={this.props.scenario.uuid} />  comments
-                    </p>
-                    <p className="scenario-article-widget-data-evaluations">
-                      <i className="fa fa-check-square-o">
-                      </i>
-                      <ScenarioEvaluationsCount uuid={this.props.scenario.uuid} /> evaluations
-                      </p>
-                      <p>
-                        <ScenarioRating doMeta={true} className={"oc-article-star"} scenario={this.props.scenario} />
-                      </p>
-                    </div>
-                  </div>
-                  <div className="col-lg-8 col-lg-pull-4 scenario-article-header-left-bottom">
-                    <div className="col-lg-12 scenario-article-indicator-wrapper">
-                      <ScenarioIndicator
-                        evaluations={userEvaluations}
-                        scenario={this.props.scenario}
-                        showEvalText={true} />
-                    </div>
-                    <div className="scenario-article-heading-wrapper">
-                      <h2 className="scenario-article-title">
-                        {this.props.scenario.title}
-                      </h2>
-                        <div>
-                          <span className="scenario-article-publisher">
-                            Created by <UserAvatar uuid={this.props.scenario.creator} />
-                          </span>
-                          <span className="scenario-article-timestamp">
-                            { this.props.scenario.timestamp ?
-                              <TimeAgo date={this.props.scenario.timestamp} />
-                                : '' }
-                          </span>
-                        </div>
-                        {editor}
-                        </div>
-                      <div className="scenario-article-summary-wrapper">
-                        <p className="scenario-article-summary">
-                          {this.props.scenario.summary}
-                        </p>
-                      </div>
-                    </div>
-                  </header>
-                  <div className="scenario-article-section">
-                    <div className={article_image_overlay}>
-                      {image}
-                    </div>
-                    {copyright}
-                    <div className="scenario-article-meta">
-                      <div className="col-md-3">
-                        <div className="scenario-ast-wrapper">
-                          <span className="scenario-ast">Participants:</span>
-                          <span className="scenario-ast-items">
-                            {this.props.scenario.actors ? this.props.scenario.actors.join(', ') : ''}
-                          </span>
-                          <br>
-                          </br>
-                        </div>
-                      </div>
-                      <div className="col-md-3">
-                        <div className="scenario-ast-wrapper">
-                          <span className="scenario-ast">Sectors:</span>
-                          <span className="scenario-ast-items">
-                            {this.props.scenario.sectors ? this.props.scenario.sectors.join(', ') : ''}
-                          </span>
-                          <br>
-                          </br>
-                        </div>
-                      </div>
-                      <div className="col-md-3">
-                        <div className="scenario-ast-wrapper">
-                          <span className="scenario-ast">Tools:</span>
-                          <span className="scenario-ast-items">
-                            {this.props.scenario.devices ? this.props.scenario.devices.join(', ') : ''}
-                          </span>
-                          <br>
-                          </br>
-                        </div>
-                      </div>
-                      {credit}
+                    id={this.props.scenario.uuid} /> {this.i18n('views', 'views')}
+                </p>
+                <p className="scenario-article-widget-data-comments">
+                  <i className="fa fa-comment-o">
+                  </i>
+                  <Comments
+                    scope="scenarios"
+                    className="scenario-article-comments"
+                    id={this.props.scenario.uuid} /> {this.i18n('comments', 'comments')}
+                </p>
+                <p className="scenario-article-widget-data-evaluations">
+                  <i className="fa fa-check-square-o">
+                  </i>
+                  <ScenarioEvaluationsCount uuid={this.props.scenario.uuid} /> {this.i18n('evaluations', 'evaluations')}
+                </p>
+                <p>
+                  <ScenarioRating
+                    doMeta={true}
+                    className={"oc-article-star"}
+                    scenario={this.props.scenario} />
+                </p>
+              </div>
+            </div>
+            <br />
+            <div className="col-lg-8 col-lg-pull-4 scenario-article-header-left-bottom">
 
-                    </div>
-                  </div>
-                  <footer className="scenario-article-footer">
-                  </footer>
+              <div className="scenario-article-heading-wrapper">
+                <div className="col-lg-12 scenario-article-indicator-wrapper">
+                  <span>
+                    {this.userIsCreator(this.props.scenario) ?
+                      null :
+                      <Favorite
+                        scenario={this.props.scenario.uuid}
+                        />
+                    }
+                    {this.userIsCreator(this.props.scenario) ?
+                      null :
+                      <ScenarioRating
+                        scenario={this.props.scenario}
+                        enabled={true}
+                        className={"oc-article-rate-star"}
+                        />
+                    }
+                  </span>
                 </div>
-                <div className="scenario-article-narrative-wrapper">
-                  <div className="scenario-article-narrative">
-                    {this.props.scenario.narrative}
+                <h2 className="scenario-article-title">
+                  {this.props.scenario.title}
+                </h2>
+                <div>
+                <div className="scenario-article-publisher-wrapper">
+                  <span className="scenario-article-publisher">
+                      {this.i18n('created_by', 'Created by')} <UserAvatar uuid={this.props.scenario.creator} />
+                  </span>
+                  <span className="scenario-article-timestamp">
+                    { this.props.scenario.timestamp ?
+                      <TimeAgo
+                        date={this.props.scenario.timestamp}
+                        formatter={this.i18nFormatter} />
+                      : '' }
+                    </span>
+                    {editor}
                   </div>
                 </div>
               </div>
-            );
-          }
-        });
+              <div className="scenario-article-summary-wrapper">
+                <p className="scenario-article-summary">
+                  {this.props.scenario.summary}
+                </p>
+              </div>
+            </div>
+          </header>
+          <div className="scenario-article-section">
+            <div className={article_image_overlay}>
+              {image}
+            </div>
+            {copyright}
+            <div className="scenario-article-meta">
+              <div className="col-md-3">
+                <div className="scenario-ast-wrapper">
+                  <span className="scenario-ast">{this.i18n('participants', 'Participants')}:</span>
+                  <span className="scenario-ast-items">
+                    {this.props.scenario.actors ? this.props.scenario.actors.join(', ') : ''}
+                  </span>
+                  <br>
+                  </br>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="scenario-ast-wrapper">
+                  <span className="scenario-ast">{this.i18n('sectors', 'Sectors')}:</span>
+                  <span className="scenario-ast-items">
+                    {this.props.scenario.sectors ? this.props.scenario.sectors.join(', ') : ''}
+                  </span>
+                  <br>
+                  </br>
+                </div>
+              </div>
+              <div className="col-md-3">
+                <div className="scenario-ast-wrapper">
+                  <span className="scenario-ast">{this.i18n('tools', 'Tools')}:</span>
+                  <span className="scenario-ast-items">
+                    {this.props.scenario.devices ? this.props.scenario.devices.join(', ') : ''}
+                  </span>
+                  <br>
+                  </br>
+                </div>
+              </div>
+              {credit}
+            </div>
+          </div>
+          <footer className="scenario-article-footer">
+          </footer>
+        </div>
+        <div className="scenario-article-narrative-wrapper">
+          <div className="scenario-article-narrative">
+            {this.props.scenario.narrative}
+          </div>
+        </div>
+      </div>
+    );
+  }
+});
 
-        export default ScenarioTableView;
+export default ScenarioTableView;
