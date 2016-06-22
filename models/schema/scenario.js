@@ -9,11 +9,14 @@ var scenario = mongoose.Schema({
   creator     : { type: String, required: true  }, // user uuid
   image       : { type: String                  }, // the image
   thumbnail   : { type: String                  }, // the thumbnail
+  credit      : { type: String                  }, // the credit
   credits     : { type: [{
     creditor: String,
     creditorUrl: String}]                       },
   copyright   : { type: String                  }, // the copyrght
   timestamp   : { type: Date, default: Date.now }, // set when created
+  editor     : { type: String, required: false  }, // set when updated
+  editor_timestamp   : { type: Date, required: false }, // set when updated
   actors      : { type: [String]                }, // tags (comma-separated)
   sectors     : { type: [String]                }, // tags (comma-separated)
   devices     : { type: [String]                }, // tags (comma-separated)
