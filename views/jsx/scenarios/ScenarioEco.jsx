@@ -2,12 +2,14 @@ import React              from 'react';
 import ui                 from '../../../ui_routes.js';
 import $                  from 'jquery';
 import api                from '../../../api_routes.js';
+import Router             from 'react-router';
+
 
 import LoadingMixin       from '../LoadingMixin.jsx';
 import I18nMixin          from '../i18n/I18nMixin.jsx';
 
 var ScenarioEco = React.createClass({
-  mixins: [LoadingMixin, I18nMixin],
+  mixins: [LoadingMixin, I18nMixin, Router.Navigation],
   getInitialState: function () {
     return {
       items: [],
@@ -42,13 +44,21 @@ var ScenarioEco = React.createClass({
     });
 
   },
+  handleClick: function(sectorName) {
+    return function() {
+      console.log('Clicked on ', sectorName);
+      this.transitionTo('scenarioList', {}, {
+        'sectors' : sectorName
+      });
+    }
+  },
   render: function() {
     return(
       <div className="oc-eco-items">
         {
           this.state.items.map(
             (item, i) =>
-            <div key={i} className={"oc-eco-item"}>
+            <div key={i} className={"oc-eco-item"} onClick={this.handleClick(item._id).bind(this)}>
               <img
                 className="oc-eco-item-icon"
                 src={ui.asset('static/img/'.concat(item._id.concat('_icon.svg')))}/>
