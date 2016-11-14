@@ -21,7 +21,7 @@ var ReportTableView = React.createClass({
 
     var image = this.props.report.image;
     if (image && (image.startsWith('uploads/') || image.startsWith('tmp/'))) {
-      image = (<img src={ui.asset(this.props.report.image)} width="100%"/>);
+      image = (<img src={ui.asset(this.props.report.image)} className="report-img img-thumbnail"/>);
     } else {
       image = undefined;
     }
@@ -38,7 +38,7 @@ var ReportTableView = React.createClass({
     var credit;
     if (this.props.report.credit) {
       credit = (
-        <div className="col-md-3">
+        <div className="col-md-6">
           <div className="scenario-ast-wrapper">
             <span className="scenario-ast">{this.i18n('Reports.credit', 'Credit')}:</span>
             <span className="scenario-ast-items">{this.props.report.credit}</span><br></br>
@@ -60,6 +60,15 @@ var ReportTableView = React.createClass({
     if (this.props.report.score && this.props.report.score.numOfEvaluations) {
       evaluationsCnt = this.props.report.score.numOfEvaluations;
     }
+		
+		var url;
+		if (this.props.report.url) {
+			url = (
+				<a href={this.props.report.url} data-toggle="tooltip" title={this.props.report.url} className="report-article-url">
+					{this.props.report.url} <i className="fa fa-external-link"></i>
+				</a>
+			)
+		}
 
     return (
       <div className="col-lg-8 col-lg-offset-2">
@@ -96,12 +105,13 @@ var ReportTableView = React.createClass({
         </header>
 
         <div className="scenario-article-section">
-          <div id="scenario-article-image">
+          <div id="report-article-image">
             {image}
           </div>
           {copyright}
-          <div className="scenario-article-meta">
-            <div className="col-md-3">
+          <div className="report-article-meta">
+						<div className="row">
+            <div className="col-md-6">
               <div className="scenario-ast-wrapper">
                 <span className="scenario-ast">
                   {this.props.report.domains && this.props.report.domains.length > 1 ?
@@ -114,7 +124,7 @@ var ReportTableView = React.createClass({
                 </span><br></br>
               </div>
             </div>
-            <div className="col-md-3">
+            <div className="col-md-6">
               <div className="scenario-ast-wrapper">
                 <span className="scenario-ast">{this.i18n('Reports.tags', 'Tags')}:</span>
                 <span className="scenario-ast-items">
@@ -122,7 +132,9 @@ var ReportTableView = React.createClass({
                 </span><br></br>
               </div>
             </div>
-            <div className="col-md-3">
+						</div>
+						<div className="row">
+            <div className="col-md-6">
               <div className="scenario-ast-wrapper">
                 <span className="scenario-ast">
                   {this.props.report.areas && this.props.report.areas.length > 1 ?
@@ -137,9 +149,22 @@ var ReportTableView = React.createClass({
             </div>
 
             {credit}
-            
+						
+						</div>
+						<div className="row">
+						<div className="col-md-6">
+							<div className="scenario-ast-wrapper">
+								<span className="scenario-ast">{this.i18n('Reports.report', 'Report')}:</span>
+								<span className="scenario-ast-items">
+									{url}
+								</span><br></br>
+							</div>
+						</div>
+						</div>
+
           </div>
         </div>
+				
         <footer className="scenario-article-footer"></footer>
       </div>
       <div className="scenario-article-narrative-wrapper">
