@@ -28,3 +28,5 @@ config/ga.js
 public
 uploads
 doc/*.pdf
+
+.DS_Store
