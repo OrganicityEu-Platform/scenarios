@@ -1,8 +1,9 @@
 {
   "name": "organicity-scenarios",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "server.js",
-  "license": "TODO",
+  "license": "MIT",
+  "description": "The Organicity Scenario Tool",
   "repository": {
     "type": "git",
     "url": "https://github.com/OrganicityEu-Platform/scenarios.git"
@@ -125,6 +126,7 @@
     "url-assembler": "^1.2.4"
   },
   "scripts": {
+    "start": "node app.js",
     "precommit": "gulp lint",
     "prepush": "gulp test"
   }
