@@ -4,7 +4,9 @@ if (!process.enc) {
 
 module.exports = {
   host :        process.env.WEB_HOST         || 'http://localhost',
-  port :    int(process.env.WEB_PORT)        || 8080,
+  host_external : 'https://scenarios.organicity.eu',
+  port :    int(process.env.WEB_PORT)        || 11111,
+  port_external : 443,
   contextPath : process.env.WEB_CONTEXTPATH  || '/',
   dev :    bool(process.env.WEB_DEV)         || false,
   title :       process.env.WEB_TITLE        || 'OrganiCity Scenarios'
