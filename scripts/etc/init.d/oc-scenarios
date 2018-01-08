@@ -1,9 +1,9 @@
 #!/bin/sh
 #
-# Organicity Proxy startup script  
+# Organicity Scenarios startup script  
 #
 # chkconfig: 345 99 01
-# description: Organicity Proxy startup script
+# description: Organicity Scenarios startup script
 
 export NAME=oc-scenarios
 export SOURCE_DIR=/opt/scenarios
@@ -72,7 +72,7 @@ case "$1" in
       ;;
       *)
         echo "RESTART $NAME (PID $PID)"
-        forever restart --pidFile $PID_PATH $SCRIPT
+        forever restart -c $NODE --pidFile $PID_PATH $SCRIPT
       ;;
     esac
   ;;
